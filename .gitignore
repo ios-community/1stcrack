@@ -1,0 +1,21 @@
+# Binaries and build output.
+/1stcrack
+/bin/
+
+# SQLite runtime files.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Receipts generated at runtime (keep folder, ignore contents).
+/receipts/*.txt
+
+# Coverage output.
+coverage.out
+coverage.html
+
+# IDE and OS artefacts.
+.DS_Store
+.idea/
+.vscode/

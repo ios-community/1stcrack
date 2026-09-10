@@ -1,0 +1,40 @@
+version: "2"
+
+linters:
+  enable:
+    - godoclint
+    - godot
+    - revive
+    - stylecheck
+
+  settings:
+    godoclint:
+      default: all
+      enable:
+        - require-doc
+        - require-pkg-doc
+        - no-unused-link
+        - require-stdlib-doclink
+      require-doc:
+        ignore-unexported: false
+      start-with-name:
+        include-unexported: true
+
+    godot:
+      scope: all
+      capital: true
+
+    revive:
+      rules:
+        - name: package-comments
+        - name: exported
+          arguments:
+            - checkPrivateReceivers: true
+              sayRepetitiveInsteadOfMissing: false
+
+    stylecheck:
+      checks:
+        - "ST1000"
+        - "ST1020"
+        - "ST1021"
+        - "ST1022"
