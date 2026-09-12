@@ -10,18 +10,21 @@ import (
 	"1stcrack/internal/domain"
 )
 
-// OrderRepository provides atomic checkout persistence with FIFO stock deduction.
+// OrderRepository provides atomic checkout persistence with FIFO stock
+// deduction.
 type OrderRepository struct {
-	// db is the shared SQLite connection pool.
+	// Shared SQLite connection pool.
 	db *sql.DB
 }
 
-// NewOrderRepository creates an OrderRepository using the given connection pool.
+// NewOrderRepository creates an OrderRepository using the given connection
+// pool.
 func NewOrderRepository(db *sql.DB) *OrderRepository {
 	return &OrderRepository{db: db}
 }
 
-// CreateOrder records an order and deducts roast stock in FIFO order atomically.
+// CreateOrder records an order and deducts roast stock in FIFO order
+// atomically.
 //
 // The order parameter must carry a pre-generated identifier, totals, and
 // payment details. The items parameter holds one line per product. The needs
@@ -132,7 +135,8 @@ func (r *OrderRepository) ListOrdersSince(ctx context.Context, since time.Time) 
 	return out, nil
 }
 
-// ListDeductionsSince returns FIFO audit rows created at or after the given time.
+// ListDeductionsSince returns FIFO audit rows created at or after the given
+// time.
 func (r *OrderRepository) ListDeductionsSince(ctx context.Context, since time.Time) ([]domain.BatchDeduction, error) {
 	const q = `SELECT id, order_id, roast_batch_id, deducted_mg FROM batch_deductions WHERE created_at >= ? ORDER BY id ASC;`
 	rows, err := r.db.QueryContext(ctx, q, since.UTC())
@@ -170,9 +174,9 @@ func deductFIFO(ctx context.Context, tx *sql.Tx, orderID string, beanID string, 
 		return fmt.Errorf("query fifo batches %s: %w", beanID, err)
 	}
 	type batchStock struct {
-		// id is the batch identifier.
+		// Batch identifier.
 		id string
-		// remaining is the available stock.
+		// Available stock.
 		remaining domain.WeightMg
 	}
 	var batches []batchStock

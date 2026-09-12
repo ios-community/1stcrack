@@ -23,7 +23,8 @@ func (c *commander) runRoast(ctx context.Context, args []string) error {
 	return c.executeRoast(ctx, *beanID, *green, *roasted, *level)
 }
 
-// executeRoast validates weights and records the batch through the service layer.
+// executeRoast validates weights and records the batch through the service
+// layer.
 func (c *commander) executeRoast(ctx context.Context, beanID string, green string, roasted string, level string) error {
 	if beanID == "" {
 		return fmt.Errorf("missing --bean: see `1stcrack products` for ids")
@@ -45,6 +46,6 @@ func (c *commander) executeRoast(ctx context.Context, beanID string, green strin
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(c.stdout, "recorded %s — %.1f%% shrinkage, %s remaining\n", batch.ID, batch.ShrinkagePct, batch.RemainingMg.String())
+	_, _ = fmt.Fprintf(c.stdout, "recorded %s — %.1f%% shrinkage, %s remaining\n", batch.ID, batch.ShrinkagePct, batch.RemainingMg.String())
 	return nil
 }

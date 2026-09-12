@@ -108,10 +108,11 @@ func TestBatchAlerts(t *testing.T) {
 	}
 }
 
-// TestReceiptEdges verifies truncation, zero time, and unknown payment rendering.
+// TestReceiptEdges verifies truncation, zero time, and unknown payment
+// rendering.
 func TestReceiptEdges(t *testing.T) {
 	t.Parallel()
-	order := &domain.Order{ID: "ORD-EDGE-1", OrderType: domain.OrderTypeB2B, CustomerName: "Kafe", TotalAmount: 2000000, PaidAmount: 2000000, PaymentMethod: "GOLD"}
+	order := &domain.Order{ID: "ORD-EDGE-1", OrderType: domain.OrderTypeB2B, CustomerName: "Cafe", TotalAmount: 2000000, PaidAmount: 2000000, PaymentMethod: "GOLD"}
 	long := strings.Repeat("A", 60)
 	out := GenerateReceipt(order, []ReceiptLine{{Name: long, Quantity: 1, Subtotal: 2000000}}, 0, "")
 	for _, line := range strings.Split(out, "\n") {
@@ -123,7 +124,7 @@ func TestReceiptEdges(t *testing.T) {
 		t.Fatalf("receipt missing fallback rendering:\n%s", out)
 	}
 	centered := GenerateReceipt(order, nil, 0, "")
-	if !strings.Contains(centered, "Terima kasih!") {
+	if !strings.Contains(centered, "Thank you!") {
 		t.Fatalf("receipt missing footer:\n%s", centered)
 	}
 }

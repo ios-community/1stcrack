@@ -52,11 +52,12 @@ type BatchAlert struct {
 
 // InventoryService reports stock states against configurable thresholds.
 type InventoryService struct {
-	// beans reads green beans and roast batches.
+	// Reads green beans and roast batches.
 	beans *repository.BeanRepository
 }
 
-// NewInventoryService creates an InventoryService using the given connection pool.
+// NewInventoryService creates an InventoryService using the given
+// connection pool.
 func NewInventoryService(db *sql.DB) *InventoryService {
 	return &InventoryService{beans: repository.NewBeanRepository(db)}
 }
@@ -104,7 +105,8 @@ func (s *InventoryService) ListGreenBeanAlerts(ctx context.Context, threshold do
 	return out, nil
 }
 
-// ListRoastBatchAlerts returns one alert per active roast batch for the given threshold.
+// ListRoastBatchAlerts returns one alert per active roast batch for the
+// given threshold.
 func (s *InventoryService) ListRoastBatchAlerts(ctx context.Context, beanID string, threshold domain.WeightMg) ([]BatchAlert, error) {
 	batches, err := s.beans.ListActiveBatches(ctx, beanID)
 	if err != nil {

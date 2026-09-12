@@ -25,7 +25,8 @@ func TestOpenConfiguresWAL(t *testing.T) {
 	}
 }
 
-// TestRunMigrationsIsIdempotent verifies ordered migration and seed replay safety.
+// TestRunMigrationsIsIdempotent verifies ordered migration and seed replay
+// safety.
 func TestRunMigrationsIsIdempotent(t *testing.T) {
 	t.Parallel()
 	db, err := Open(filepath.Join(t.TempDir(), "test.db"))

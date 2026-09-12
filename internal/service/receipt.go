@@ -43,9 +43,9 @@ func GenerateReceipt(order *domain.Order, lines []ReceiptLine, change domain.Mon
 	b.WriteString(strings.Repeat("-", ReceiptWidth) + "\n")
 	b.WriteString(receiptRow("Total", order.TotalAmount.String()) + "\n")
 	b.WriteString(receiptRow(paymentLabel(order.PaymentMethod), order.PaidAmount.String()) + "\n")
-	b.WriteString(receiptRow("Kembali", change.String()) + "\n")
+	b.WriteString(receiptRow("Change", change.String()) + "\n")
 	b.WriteString(strings.Repeat("-", ReceiptWidth) + "\n")
-	b.WriteString(receiptCenter("Terima kasih!") + "\n")
+	b.WriteString(receiptCenter("Thank you!") + "\n")
 	if filePath != "" {
 		b.WriteString("File: " + filePath + "\n")
 	}
@@ -85,7 +85,7 @@ func receiptDate(order *domain.Order) string {
 func paymentLabel(method string) string {
 	switch method {
 	case domain.PaymentCash:
-		return "Tunai"
+		return "Cash"
 	case domain.PaymentQRIS:
 		return "QRIS"
 	case domain.PaymentTransfer:

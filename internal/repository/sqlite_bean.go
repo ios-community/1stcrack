@@ -11,7 +11,7 @@ import (
 
 // BeanRepository provides SQLite persistence for green beans and roast batches.
 type BeanRepository struct {
-	// db is the shared SQLite connection pool.
+	// Shared SQLite connection pool.
 	db *sql.DB
 }
 
@@ -136,7 +136,7 @@ func (r *BeanRepository) ListActiveBatches(ctx context.Context, beanID string) (
 	return out, nil
 }
 
-// rowScanner abstracts sql.Row and sql.Rows for batch scanning.
+// rowScanner abstracts [sql.Row] and [sql.Rows] for batch scanning.
 type rowScanner interface {
 	// Scan copies column values into destinations.
 	Scan(dest ...any) error
@@ -199,7 +199,8 @@ func (r *BeanRepository) CountBatchesForDay(ctx context.Context, prefix string) 
 	return n, nil
 }
 
-// DeductGreenAndCreateBatch deducts raw stock and inserts a roast batch atomically.
+// DeductGreenAndCreateBatch deducts raw stock and inserts a roast batch
+// atomically.
 func (r *BeanRepository) DeductGreenAndCreateBatch(ctx context.Context, batch *domain.RoastBatch) error {
 	if batch == nil {
 		return fmt.Errorf("roast batch must not be nil")

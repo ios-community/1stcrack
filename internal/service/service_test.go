@@ -151,7 +151,7 @@ func TestGenerateReceipt(t *testing.T) {
 	order := &domain.Order{ID: "ORD-20260214-0001", OrderType: domain.OrderTypeB2C, TotalAmount: 135000, PaidAmount: 150000, PaymentMethod: domain.PaymentCash}
 	lines := []ReceiptLine{{Name: "Hot Latte", Quantity: 2, Subtotal: 50000}, {Name: "Beans 250g", Quantity: 1, Subtotal: 85000}}
 	out := GenerateReceipt(order, lines, 15000, "receipts/ORD-20260214-0001.txt")
-	for _, want := range []string{"ORD-20260214-0001", "Rp135.000", "Rp15.000", "Kembali", "receipts/"} {
+	for _, want := range []string{"ORD-20260214-0001", "Rp135.000", "Rp15.000", "Change", "receipts/"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("receipt missing %q:\n%s", want, out)
 		}

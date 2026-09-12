@@ -24,9 +24,9 @@ type RoastInput struct {
 
 // RoastingService executes roast batches with shrinkage calculation.
 type RoastingService struct {
-	// beans persists green beans and roast batches.
+	// Green bean and roast batch persistence.
 	beans *repository.BeanRepository
-	// now supplies production timestamps and batch ID dates.
+	// Production timestamp and batch ID date source.
 	now func() time.Time
 }
 
@@ -35,7 +35,8 @@ func NewRoastingService(db *sql.DB) *RoastingService {
 	return &RoastingService{beans: repository.NewBeanRepository(db), now: time.Now}
 }
 
-// ExecuteBatch validates input, calculates shrinkage, and records a roast batch atomically.
+// ExecuteBatch validates input, calculates shrinkage, and records a roast
+// batch atomically.
 func (s *RoastingService) ExecuteBatch(ctx context.Context, input RoastInput) (*domain.RoastBatch, error) {
 	if input.GreenBeanID == "" {
 		return nil, fmt.Errorf("green bean id must not be empty")

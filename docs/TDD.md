@@ -1,78 +1,82 @@
 # Technical Design Document (TDD)
 
-**Sistem:** 1stcrack Core Engine & CLI
+**System:** 1stcrack Core Engine & CLI
 
-**Bahasa Pemrograman:** Go (Golang) 1.27.1+
+**Programming Language:** Go (Golang) 1.27.1+
 
-**Arsitektur CLI:** Subcommand via stdlib `flag` + `text/tabwriter`, tanpa dependensi TUI. Tiap invocasi membuka DB, menjalankan satu operasi via service layer, mencetak hasil, lalu keluar (exit code 0 sukses / 1 gagal).
+**CLI Architecture:** Subcommands via stdlib `flag` + `text/tabwriter`, with no TUI dependencies. Each invocation opens the DB, runs one operation through the service layer, prints the result, then exits (exit code 0 on success / 1 on failure).
 
 **Database:** Embedded SQLite via `modernc.org/sqlite` (Pure Go / CGO-Free)
 
-**Skema Migrasi:** Embedded SQL Files (`//go:embed`)
+**Migration Scheme:** Embedded SQL Files (`//go:embed`)
 
 ---
 
-# 1. Struktur Folder & Paket (*Clean Layered Architecture*)
+# 1. Folder & Package Structure (*Clean Layered Architecture*)
 
 ```
 1stcrack/
 ├── cmd/
 │   └── 1stcrack/
-│       └── main.go               # Dispatch subcommand CLI (exit code)
+│       └── main.go               # CLI subcommand dispatch (exit code)
 ├── internal/
 │   ├── cli/
 │   │   ├── cli.go                # Run(), global flags --db/--receipts-dir, dispatch
 │   │   ├── weight.go             # ParseWeight (mg/g/kg) & ParseMoney
-│   │   ├── list.go               # Subcommand beans & products
-│   │   ├── roast.go              # Subcommand roast
-│   │   ├── sell.go               # Subcommand sell + ekspor struk
-│   │   └── stock_report.go       # Subcommand stock & report
+│   │   ├── list.go               # beans & products subcommands
+│   │   ├── roast.go              # roast subcommand
+│   │   ├── sell.go               # sell subcommand + receipt export
+│   │   ├── stock_report.go       # stock & report subcommands
+│   │   ├── menu.go               # Role menu + prompter (stdin/stdout injection)
+│   │   ├── menu_cashier.go       # Guided sale flow
+│   │   ├── menu_roaster.go       # Guided batch recording flow
+│   │   └── menu_owner.go         # Owner superset menu
 ├── internal/
 │   ├── database/
 │   │   ├── db.go                 # SQLite connection & WAL mode config
-│   │   ├── migrator.go           # Runner migrasi otomatis
-│   │   └── migrations/           # File SQL migrasi
+│   │   ├── migrator.go           # Automatic migration runner
+│   │   └── migrations/           # SQL migration files
 │   │       ├── 000001_init_schema.up.sql
 │   │       └── 000002_seed_data.up.sql
 │   ├── domain/
-│   │   ├── errors.go             # Sentinel domain errors
+│   │   ├── errors.go             # Domain sentinel errors
 │   │   ├── types.go              # Value objects (WeightMg, MoneyIDR)
-│   │   ├── bean.go               # Entitas GreenBean & RoastBatch
-│   │   ├── product.go            # Entitas Product & Recipe (BOM)
-│   │   └── order.go              # Entitas Order & OrderItem
+│   │   ├── bean.go               # GreenBean & RoastBatch entities
+│   │   ├── product.go            # Product & Recipe (BOM) entities
+│   │   └── order.go              # Order & OrderItem entities
 │   ├── repository/
-│   │   ├── sqlite_bean.go        # CRUD GreenBean & RoastBatch (FIFO query)
-│   │   ├── sqlite_order.go       # Transaksi atomik Checkout & Stok
-│   │   └── sqlite_product.go     # Query katalog produk & resep
+│   │   ├── sqlite_bean.go        # GreenBean & RoastBatch CRUD (FIFO query)
+│   │   ├── sqlite_order.go       # Atomic Checkout & Stock transactions
+│   │   └── sqlite_product.go     # Product catalogue & recipe queries
 │   ├── service/
-│   │   ├── roasting_service.go   # Hitung shrinkage & eksekusi batch
-│   │   ├── order_service.go      # Validasi keranjang, kalkulasi, & FIFO deduction
-│   │   ├── inventory_service.go  # Laporan stok & alert
+│   │   ├── roasting_service.go   # Shrinkage calculation & batch execution
+│   │   ├── order_service.go      # Cart validation, totals, & FIFO deduction
+│   │   ├── inventory_service.go  # Stock reports & alerts
 │   │   ├── receipt.go            # GenerateReceipt (stdout + file, single source)
-│   │   └── report.go             # Reporter & SummariseDay (agregasi harian)
+│   │   └── report.go             # Reporter & SummariseDay (daily aggregation)
 ├── docs/
 │   ├── PRD.md
 │   └── TDD.md
-├── LICENSE                       # MIT atas nama Dzulkifli Anwar
+├── LICENSE                       # MIT on behalf of Dzulkifli Anwar
 ├── go.mod
 └── go.sum
 ```
 
 ---
 
-## 2. Keputusan Desain Teknis (*Technical Trade-Offs*)
+## 2. Technical Design Decisions (*Technical Trade-Offs*)
 
-## A. Representasi Satuan & Presisi
+## A. Unit Representation & Precision
 
-Untuk mencegah *floating-point rounding error* (misal: `18.5g` menjadi `18.499999999g`), seluruh perhitungan di database dan logika bisnis menggunakan tipe **`int64`**:
+To prevent *floating-point rounding errors* (e.g. `18.5g` becoming `18.499999999g`), all database and business logic calculations use the **`int64`** type:
 
-- **Bobot Kopi**
-Disimpan dalam satuan **Miligram (`mg`)**.
+- **Coffee Weight**
+Stored in **Milligrams (`mg`)**.
     - $1 \text{ gram} = 1.000 \text{ mg}$
     - $18,5 \text{ gram} = 18.500 \text{ mg}$
     - $1 \text{ kg} = 1.000.000 \text{ mg}$
-- **Mata Uang**
-Disimpan dalam satuan **Rupiah (`int64`)**.
+- **Currency**
+Stored in **Rupiah (`int64`)**.
 
 ```go
 // internal/domain/types.go
@@ -90,49 +94,58 @@ func (w WeightMg) ToGrams() float64 {
 }
 ```
 
-## B. Algoritma Pemotongan Stok FIFO
+## B. FIFO Stock Deduction Algorithm
 
-Saat pesanan memerlukan sejumlah `required_mg` biji sangrai:
+When an order requires `required_mg` of roasted beans:
 
-1. Buka transaksi database: `tx, err := db.BeginTx(ctx, nil)`.
-2. Query batch aktif dengan sisa stok $> 0$, diurutkan dari tanggal tertua:
+1. Open a database transaction: `tx, err := db.BeginTx(ctx, nil)`.
+2. Query active batches with remaining stock $> 0$, oldest first:
 `SELECT id, remaining_mg FROM roast_batches WHERE remaining_mg > 0 AND green_bean_id = ? ORDER BY roasted_at ASC, id ASC;`
-(Catatan: tanpa `FOR UPDATE` — SQLite tidak mendukungnya; atomicity dijamin transaksi + `MaxOpenConns(1)`.)
-3. Lakukan iterasi (*looping*) pemotongan stok:
-    - Jika `batch.remaining_mg >= needed`: Potong batch tersebut, `needed = 0`, *break*.
-    - Jika `batch.remaining_mg < needed`: Kosongkan batch (`remaining_mg = 0`), kurangi `needed -= batch.remaining_mg`, lanjut ke batch berikutnya.
-4. Catat riwayat pemotongan ke tabel `batch_deductions` untuk audit.
-5. Jika seluruh batch tidak mencukupi, `tx.Rollback()` dan kembalikan `domain.ErrInsufficientStock`.
-6. Jika sukses, `tx.Commit()`.
+(Note: no `FOR UPDATE` — SQLite does not support it; atomicity is guaranteed by the transaction + `MaxOpenConns(1)`.)
+3. Iterate (*loop*) over stock deduction:
+    - If `batch.remaining_mg >= needed`: deduct from that batch, `needed = 0`, *break*.
+    - If `batch.remaining_mg < needed`: empty the batch (`remaining_mg = 0`), subtract `needed -= batch.remaining_mg`, continue to the next batch.
+4. Record the deduction history in the `batch_deductions` table for auditing.
+5. If all batches are insufficient, `tx.Rollback()` and return `domain.ErrInsufficientStock`.
+6. On success, `tx.Commit()`.
 
-## C. Arsitektur CLI
+## C. CLI Architecture
 
-Satu binary, banyak subcommand. Tidak ada state antar invocasi sehingga seluruh kelas bug fokus/modal/routing tombol tidak mungkin terjadi:
+One binary, many subcommands. There is no state between invocations, so entire bug classes around focus, modals, and key routing cannot occur:
 
 ```go
 // internal/cli/cli.go
-func Run(ctx context.Context, args []string, stdout io.Writer, stderr io.Writer, dbPath string, receiptsDir string) int {
-    // 1. Pindai global flags --db / --receipts-dir
+func Run(ctx context.Context, args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer, dbPath string, receiptsDir string) int {
+    // 1. Scan global flags --db / --receipts-dir
     // 2. database.Open + RunMigrations
-    // 3. Dispatch beans | products | roast | sell | stock | report | help
-    // 4. Kembalikan 0 sukses, 1 gagal (pesan ke stderr)
+    // 3. Dispatch menu | beans | products | roast | sell | stock | report | help
+    // 4. Return 0 on success, 1 on failure (message to stderr)
     return 0
 }
 ```
 
-Contoh pemakaian:
+Usage examples:
 
 ```
+1stcrack                                  # guided menu (roles → flows → exit)
+1stcrack menu                             # same as above, explicit
 1stcrack roast --bean GB-GAYO-WASHED --green 2kg --roasted 1700g --level Medium
 1stcrack sell --item P-LATTE-HOT:2 --paid 60000
-1stcrack sell --item P-BEANS-1KG:1 --paid 300000 --b2b --customer "Kafe X"
+1stcrack sell --item P-BEANS-1KG:1 --paid 300000 --b2b --customer "Cafe X"
 1stcrack stock [--threshold 500g]
 1stcrack report
 ```
 
-## D. Skema Database & Embedded Migration
+The guided menu (`menu.go`, `menu_cashier.go`, `menu_roaster.go`, `menu_owner.go`)
+uses stdlib `bufio` on top of the same services and subcommands (the sale flow
+invokes `runSell` with assembled arguments), so behaviour is identical to the
+command line. The constructor depends only on `io.Reader`/`io.Writer`
+so sessions can be tested with scripted stdin. Running with no arguments opens the menu;
+`help` still prints help text.
 
-Menggunakan fitur bawaan Go `//go:embed` untuk membungkus file migrasi SQL langsung ke dalam binary tanpa file eksternal.
+## D. Database Schema & Embedded Migration
+
+Uses the built-in Go `//go:embed` feature to bundle SQL migration files directly into the binary with no external files.
 
 ```go
 // internal/database/migrator.go
@@ -147,16 +160,16 @@ import (
 var migrationFS embed.FS
 
 func RunMigrations(db *sql.DB) error {
-    // 1. Buat tabel schema_migrations jika belum ada
-    // 2. Baca file SQL dari migrationFS secara urut
-    // 3. Eksekusi script DDL dalam transaksi
+    // 1. Create the schema_migrations table if missing
+    // 2. Read SQL files from migrationFS in order
+    // 3. Execute DDL scripts inside transactions
     return nil
 }
 ```
 
 ---
 
-# 3. Skema Basis Data (DDL SQLite)
+# 3. Database Schema (SQLite DDL)
 
 ```sql
 -- internal/database/migrations/000001_init_schema.up.sql
@@ -166,18 +179,18 @@ CREATE TABLE IF NOT EXISTS green_beans (
     name TEXT NOT NULL,
     origin TEXT NOT NULL,
     process TEXT NOT NULL,               -- Washed, Natural, Honey, etc.
-    stock_mg INTEGER NOT NULL DEFAULT 0,  -- Stok mentah dalam miligram
-    cost_per_kg INTEGER NOT NULL,        -- Harga beli dalam Rupiah
+    stock_mg INTEGER NOT NULL DEFAULT 0,  -- Raw stock in milligrams
+    cost_per_kg INTEGER NOT NULL,        -- Purchase price in Rupiah
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS roast_batches (
     id TEXT PRIMARY KEY,                 -- BATCH-YYYYMMDD-001
     green_bean_id TEXT NOT NULL,
-    green_weight_mg INTEGER NOT NULL,    -- Berat mentah masuk
-    roasted_weight_mg INTEGER NOT NULL,  -- Berat matang keluar
-    remaining_mg INTEGER NOT NULL,       -- Sisa stok batch saat ini
-    shrinkage_pct REAL NOT NULL,         -- Persentase susut ((G - R) / G) * 100
+    green_weight_mg INTEGER NOT NULL,    -- Raw input weight
+    roasted_weight_mg INTEGER NOT NULL,  -- Roasted output weight
+    remaining_mg INTEGER NOT NULL,       -- Current batch stock remainder
+    shrinkage_pct REAL NOT NULL,         -- Weight loss ((G - R) / G) * 100
     roast_level TEXT NOT NULL,           -- Light, Medium, Dark
     roasted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (green_bean_id) REFERENCES green_beans(id)
@@ -187,15 +200,15 @@ CREATE TABLE IF NOT EXISTS products (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     category TEXT NOT NULL,              -- DRINK, BEAN_RETAIL, BEAN_WHOLESALE
-    price INTEGER NOT NULL,              -- Harga jual dalam Rupiah
+    price INTEGER NOT NULL,              -- Selling price in Rupiah
     is_active INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS product_recipes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     product_id TEXT NOT NULL,
-    green_bean_id TEXT,                  -- Biji spesifik yang dibutuhkan
-    required_roasted_mg INTEGER NOT NULL,-- Gramasi kopi matang yang dikonsumsi
+    green_bean_id TEXT,                  -- Specific required beans
+    required_roasted_mg INTEGER NOT NULL,-- Consumed roasted grams
     FOREIGN KEY (product_id) REFERENCES products(id),
     FOREIGN KEY (green_bean_id) REFERENCES green_beans(id)
 );
@@ -233,7 +246,7 @@ CREATE TABLE IF NOT EXISTS batch_deductions (
 
 ---
 
-### 4. Definisi Domain Error & Kontrak Service
+### 4. Domain Error Definitions & Service Contracts
 
 ```go
 // internal/domain/errors.go
@@ -242,11 +255,11 @@ package domain
 import "errors"
 
 var (
-    ErrInsufficientStock = errors.New("stok kopi tidak mencukupi untuk pesanan ini")
-    ErrInvalidRoastWeight = errors.New("berat matang tidak boleh lebih besar dari berat mentah")
-    ErrProductNotFound   = errors.New("produk tidak ditemukan")
-    ErrEmptyCart         = errors.New("keranjang belanja masih kosong")
-    ErrNegativePayment   = errors.New("nominal pembayaran kurang dari total belanja")
+    ErrInsufficientStock = errors.New("insufficient coffee stock for this order")
+    ErrInvalidRoastWeight = errors.New("roasted weight must not exceed green weight")
+    ErrProductNotFound   = errors.New("product not found")
+    ErrEmptyCart         = errors.New("shopping cart is empty")
+    ErrNegativePayment   = errors.New("paid amount is less than the order total")
 )
 ```
 
@@ -280,13 +293,13 @@ type OrderService interface {
 
 ---
 
-### 5. Strategi Pengujian (*Testing Strategy*)
+### 5. Testing Strategy (*Testing Strategy*)
 
 1. **Unit Testing (`_test.go`)**
-    - Pengujian kalkulasi matematis `ShrinkagePercentage`: Verifikasi rumus susut bobot dengan variasi input.
-    - Pengujian konversi `GramsToMg` dan `MgToGrams` untuk memastikan nol presisi yang hilang.
-    - Pengujian algoritma deplesi FIFO secara murni di level *memory struct*.
+    - Mathematical `ShrinkagePercentage` calculation tests: verify the weight loss formula across varied inputs.
+    - `GramsToMg` and `MgToGrams` conversion tests to guarantee zero lost precision.
+    - Pure in-memory FIFO depletion algorithm tests on *memory structs*.
 2. **Integration Testing:**
-    - Menggunakan database sementara (temp file) + migrasi penuh untuk menguji integritas transaksi database `ProcessCheckout` dan tiap subcommand CLI end-to-end.
-    - Mensimulasikan kondisi *insufficient stock* di tengah eksekusi untuk membuktikan *rollback* berjalan 100% tanpa mengubah saldo batch.
-    - Mensimulasikan database tertutup untuk membuktikan kegagalan I/O dilaporkan bersih via stderr + exit code 1.
+    - Temporary databases (temp files) + full migrations to test `ProcessCheckout` database transaction integrity and each CLI subcommand end-to-end.
+    - Simulating mid-execution *insufficient stock* to prove *rollback* runs 100% without changing batch balances.
+    - Simulating a closed database to prove I/O failures are reported cleanly via stderr + exit code 1.

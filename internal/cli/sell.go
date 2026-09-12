@@ -41,7 +41,7 @@ func (f *itemFlags) Set(s string) error {
 
 // runSell checks out a sale, prints the receipt, and exports the text file.
 func (c *commander) runSell(ctx context.Context, args []string) error {
-	fs := c.newFlagSet("sell", `  1stcrack sell --item P-LATTE-HOT:2 [--item P-BEANS-250:1] --paid 150000 [--b2b --customer "Kafe X"] [--method CASH]
+	fs := c.newFlagSet("sell", `  1stcrack sell --item P-LATTE-HOT:2 [--item P-BEANS-250:1] --paid 150000 [--b2b --customer "Cafe X"] [--method CASH]
 
   Payment methods: CASH, QRIS, TRANSFER.
 `)
@@ -92,6 +92,6 @@ func (c *commander) runSell(ctx context.Context, args []string) error {
 	if err := os.WriteFile(path, []byte(receipt), 0o644); err != nil {
 		return err
 	}
-	fmt.Fprint(c.stdout, receipt)
+	_, _ = fmt.Fprint(c.stdout, receipt)
 	return nil
 }

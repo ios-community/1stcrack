@@ -65,7 +65,8 @@ func TestClosedDBBeanErrors(t *testing.T) {
 	}
 }
 
-// TestClosedDBProductOrderErrors verifies catalogue and order failures on closed storage.
+// TestClosedDBProductOrderErrors verifies catalogue and order failures on
+// closed storage.
 func TestClosedDBProductOrderErrors(t *testing.T) {
 	t.Parallel()
 	db := closedTestDB(t)

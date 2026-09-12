@@ -14,7 +14,8 @@ type WeightMg int64
 
 // MoneyIDR represents a monetary amount in Indonesian Rupiah.
 //
-// It uses int64 to avoid floating-point rounding errors in payment calculations.
+// It uses int64 to avoid floating-point rounding errors in payment
+// calculations.
 type MoneyIDR int64
 
 // GramsToMg converts a gram amount to milligrams.
@@ -37,9 +38,9 @@ func (w WeightMg) ToGrams() float64 {
 
 // String returns a human-readable gram representation.
 //
-// It returns a decimal string suffixed with a space and g, for example 18.5 g.
+// It returns a decimal string suffixed with g, for example 18.5g.
 func (w WeightMg) String() string {
-	return strconv.FormatFloat(w.ToGrams(), 'f', -1, 64) + " g"
+	return strconv.FormatFloat(w.ToGrams(), 'f', -1, 64) + "g"
 }
 
 // String returns a human-readable Rupiah representation.

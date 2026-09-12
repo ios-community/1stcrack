@@ -5,16 +5,11 @@ linters:
     - godoclint
     - godot
     - revive
-    - stylecheck
+    - staticcheck
 
   settings:
     godoclint:
       default: all
-      enable:
-        - require-doc
-        - require-pkg-doc
-        - no-unused-link
-        - require-stdlib-doclink
       require-doc:
         ignore-unexported: false
       start-with-name:
@@ -29,12 +24,4 @@ linters:
         - name: package-comments
         - name: exported
           arguments:
-            - checkPrivateReceivers: true
-              sayRepetitiveInsteadOfMissing: false
-
-    stylecheck:
-      checks:
-        - "ST1000"
-        - "ST1020"
-        - "ST1021"
-        - "ST1022"
+            - check-private-receivers

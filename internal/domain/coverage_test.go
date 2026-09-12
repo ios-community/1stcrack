@@ -9,8 +9,8 @@ func TestWeightDisplay(t *testing.T) {
 	if w.ToGrams() != 18.5 {
 		t.Fatalf("ToGrams = %v, want 18.5", w.ToGrams())
 	}
-	if w.String() != "18.5 g" {
-		t.Fatalf("String = %q, want 18.5 g", w.String())
+	if w.String() != "18.5g" {
+		t.Fatalf("String = %q, want 18.5g", w.String())
 	}
 }
 

@@ -10,11 +10,12 @@ import (
 
 // ProductRepository provides SQLite persistence for products and recipes.
 type ProductRepository struct {
-	// db is the shared SQLite connection pool.
+	// Shared SQLite connection pool.
 	db *sql.DB
 }
 
-// NewProductRepository creates a ProductRepository using the given connection pool.
+// NewProductRepository creates a ProductRepository using the given
+// connection pool.
 func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }

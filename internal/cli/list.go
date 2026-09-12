@@ -19,9 +19,9 @@ func (c *commander) runBeans(args []string) error {
 		return err
 	}
 	w := tabwriter.NewWriter(c.stdout, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(w, "ID\tNAME\tORIGIN\tPROCESS\tSTOCK\tCOST/KG")
+	_, _ = fmt.Fprintln(w, "ID\tNAME\tORIGIN\tPROCESS\tSTOCK\tCOST/KG")
 	for _, bean := range beans {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", bean.ID, bean.Name, bean.Origin, bean.Process, bean.StockMg.String(), bean.CostPerKg.String())
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", bean.ID, bean.Name, bean.Origin, bean.Process, bean.StockMg.String(), bean.CostPerKg.String())
 	}
 	return w.Flush()
 }
@@ -37,9 +37,9 @@ func (c *commander) runProducts(args []string) error {
 		return err
 	}
 	w := tabwriter.NewWriter(c.stdout, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(w, "ID\tNAME\tCATEGORY\tPRICE")
+	_, _ = fmt.Fprintln(w, "ID\tNAME\tCATEGORY\tPRICE")
 	for _, product := range products {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", product.ID, product.Name, product.Category, product.Price.String())
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", product.ID, product.Name, product.Category, product.Price.String())
 	}
 	return w.Flush()
 }

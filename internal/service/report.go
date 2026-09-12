@@ -34,7 +34,7 @@ type DailySummary struct {
 
 // Reporter aggregates daily sales and consumption from stored orders.
 type Reporter struct {
-	// orders reads orders and FIFO audit rows.
+	// Order and audit row source.
 	orders *repository.OrderRepository
 }
 

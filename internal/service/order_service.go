@@ -34,11 +34,11 @@ type CheckoutRequest struct {
 
 // OrderService validates carts and processes atomic checkouts.
 type OrderService struct {
-	// products reads catalogue and recipes.
+	// Catalogue and recipe source.
 	products *repository.ProductRepository
-	// orders persists orders with FIFO deduction.
+	// Order persistence with FIFO deduction.
 	orders *repository.OrderRepository
-	// now supplies order timestamps and identifier dates.
+	// Order timestamp and identifier date source.
 	now func() time.Time
 }
 
@@ -69,7 +69,8 @@ func (s *OrderService) CalculateTotal(ctx context.Context, items []CartItem) (do
 	return total, nil
 }
 
-// ProcessCheckout validates payment, expands recipes, and records the order atomically.
+// ProcessCheckout validates payment, expands recipes, and records the order
+// atomically.
 func (s *OrderService) ProcessCheckout(ctx context.Context, req CheckoutRequest) (*domain.Order, error) {
 	orderType := req.OrderType
 	if orderType == "" {
@@ -116,7 +117,8 @@ func (s *OrderService) ProcessCheckout(ctx context.Context, req CheckoutRequest)
 	return order, nil
 }
 
-// expandNeeds converts cart lines into order items and per-bean milligram needs.
+// expandNeeds converts cart lines into order items and per-bean milligram
+// needs.
 func (s *OrderService) expandNeeds(ctx context.Context, cart []CartItem) ([]domain.OrderItem, map[string]domain.WeightMg, error) {
 	needs := make(map[string]domain.WeightMg)
 	items := make([]domain.OrderItem, 0, len(cart))

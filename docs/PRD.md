@@ -1,99 +1,104 @@
 # Product Requirement Document (PRD)
 
-**Nama Produk:** 1stcrack
+**Product Name:** 1stcrack
 
-**Versi:** 1.0.0 (MVP)
+**Version:** 1.0.0 (MVP)
 
-**Tipe Aplikasi:** Command Line Interface (CLI)
+**Application Type:** Command Line Interface (CLI)
 
-**Status:** Disetujui untuk Implementasi
-
----
-
-# 1. Ringkasan Eksekutif & Latar Belakang
-
-1stcrack adalah sistem operasional terintegrasi yang dirancang khusus untuk *micro-roastery* dan *specialty coffee shop* independen. Bisnis ini memiliki keunikan operasional: mereka membeli bahan mentah (*green beans*), menyangrainya (*roasting*) yang mengalami penyusutan bobot (*shrinkage*), lalu menjual hasilnya melalui dua jalur:
-
-1. **B2C (Retail Kafe)**
-Minuman per cangkir (mengonsumsi gramasi biji kopi matang per *shot espresso*) dan kemasan retail (250g/500g).
-2. **B2B (Grosir)**
-Penjualan biji kopi sangrai kiloan (1kg–10kg) ke kafe rekanan.
-
-1stcrack hadir untuk menggantikan pencatatan manual/spreadsheet yang rawan selisih stok, tidak mampu melacak usia *freshness* batch sangrai, dan sulit menghitung biaya produksi riil.
+**Status:** Approved for Implementation
 
 ---
 
-# 2. Profil Pengguna (*User Personas*)
+# 1. Executive Summary & Background
 
-| Persona | Peran | Kebutuhan Utama |
+1stcrack is an integrated operations system built specifically for independent *micro-roasteries* and *specialty coffee shops*. These businesses have unique operations: they buy raw materials (*green beans*), roast them (*roasting*) with weight loss (*shrinkage*), then sell the result through two channels:
+
+1. **B2C (Retail Cafe)**
+Per-cup drinks (consuming roasted bean grams per *espresso shot*) and retail packs (250g/500g).
+2. **B2B (Wholesale)**
+Kilo packs of roasted beans (1kg–10kg) for partner cafes.
+
+1stcrack exists to replace manual records and spreadsheets, which are prone to stock drift, cannot track roast batch *freshness* age, and make real production costing difficult.
+
+---
+
+# 2. User Personas
+
+| Persona | Role | Key Need |
 | --- | --- | --- |
-| **Budi (Kasir / Barista)** | Operasional Penjualan B2C & B2B | Input pesanan cepat via perintah terminal, daftar katalog instan, cetak struk nota, tidak perlu pusing memikirkan sisa stok mentah. |
-| **Rian (Head Roaster)** | Produksi & Manajemen Batch | Mencatat *green beans* masuk, menghitung otomatis persentase susut sangrai (*weight loss*), dan memberi label batch hasil sangrai. |
-| **Siti (Owner / Manajer)** | Pengawasan & Audit Bisnis | Melihat stok biji kopi yang menipis (*low-stock alert*), laporan omzet harian, dan audit konsumsi kopi per batch. |
+| **Budi (Cashier / Barista)** | B2C & B2B sales operations | Fast order entry via terminal commands, instant catalogue listing, printed receipt notes, no need to think about raw stock levels. |
+| **Rian (Head Roaster)** | Production & batch management | Record incoming *green beans*, automatic roast shrinkage (*weight loss*) percentage, and label resulting roast batches. |
+| **Siti (Owner / Manager)** | Business oversight & audit | See thinning coffee stock (*low-stock alert*), daily revenue reports, and per-batch coffee consumption audits. |
 
 ---
 
-# 3. Kebutuhan Fungsional (*Functional Requirements*)
+# 3. Functional Requirements
 
-## Modul 1: Manajemen Produksi Sangrai (*Roasting Management*)
+## Module 1: Roast Production Management (*Roasting Management*)
 
-- **FR-ROAST-01 (Pencatatan Green Beans)**
-Pengguna dapat mendaftarkan stok *green beans* baru (Origin, Varietas, Proses, Tanggal Beli, Harga Beli per Kg, Bobot Masuk).
-- **FR-ROAST-02 (Eksekusi Batch Sangrai)**
-Pengguna dapat membuat batch sangrai baru dengan memilih *green bean*, memasukkan bobot mentah (*green weight*), dan bobot matang (*roasted weight*).
-- **FR-ROAST-03 (Kalkulasi Shrinkage Otomatis)**
-Sistem wajib menghitung persentase kehilangan bobot (*weight loss*) secara otomatis dengan formula:
+- **FR-ROAST-01 (Green Bean Recording)**
+Users can register new *green bean* stock (Origin, Variety, Process, Purchase Date, Purchase Price per Kg, Incoming Weight).
+- **FR-ROAST-02 (Roast Batch Execution)**
+Users can create a new roast batch by selecting a *green bean* and entering the green weight (*green weight*) and roasted weight (*roasted weight*).
+- **FR-ROAST-03 (Automatic Shrinkage Calculation)**
+The system must automatically calculate the weight loss percentage with the formula:
     
     $$
-    \text{Shrinkage (\%)} = \frac{\text{Berat Mentah} - \text{Berat Matang}}{\text{Berat Mentah}} \times 100\%
+    \text{Shrinkage (\%)} = \frac{\text{Green Weight} - \text{Roasted Weight}}{\text{Green Weight}} \times 100\%
     $$
     
-- **FR-ROAST-04 (Penomoran Batch)**
-Sistem otomatis membuat ID Batch unik (format: `BATCH-YYYYMMDD-XXX`) dan mencatat level sangrai (*Light / Medium / Dark*).
+- **FR-ROAST-04 (Batch Numbering)**
+The system automatically creates a unique Batch ID (format: `BATCH-YYYYMMDD-XXX`) and records the roast level (*Light / Medium / Dark*).
 
-## Modul 2: Kasir & Penjualan (*Point of Sale*)
+## Module 2: Cashier & Sales (*Point of Sale*)
 
-- **FR-POS-01 (Katalog & Keranjang)**
-Kasir melihat katalog via `1stcrack products`, lalu menjual via `1stcrack sell --item ID:QTY` (flag `--item` dapat diulang untuk banyak produk).
-- **FR-POS-02 (Bill of Materials / Resep Otomatis)**
-Setiap penjualan menu minuman otomatis memicu pengurangan stok bahan baku terhubung (Contoh: 1 Cup *Hot Latte* memotong 18.0 gram *Roasted Beans* dan 1 unit *Paper Cup*).
-- **FR-POS-03 (Dukungan B2B Wholesale)**
-Kasir dapat memilih mode B2B untuk penjualan biji kopi kiloan dengan harga grosir dan input nama kafe pembeli.
-- **FR-POS-04 (Pembayaran & Ekspor Struk)**
-Sistem memvalidasi nominal pembayaran, menghitung kembalian, dan secara otomatis mengekspor struk transaksi dalam format teks `.txt` rapi ke folder `/receipts`.
+- **FR-POS-01 (Catalogue & Cart)**
+Cashiers view the catalogue via `1stcrack products`, then sell via `1stcrack sell --item ID:QTY` (the `--item` flag is repeatable for multiple products).
+- **FR-POS-02 (Automatic Bill of Materials / Recipes)**
+Every drink sale automatically deducts the linked raw materials (Example: 1 Cup of *Hot Latte* deducts 18.0 grams of *Roasted Beans* and 1 unit of *Paper Cup*).
+- **FR-POS-03 (B2B Wholesale Support)**
+Cashiers can select B2B mode for kilo-pack coffee sales at wholesale prices with the buyer cafe name as input.
+- **FR-POS-04 (Payment & Receipt Export)**
+The system validates the payment amount, calculates change, and automatically exports the transaction receipt in neat `.txt` text format to the `/receipts` folder.
 
-## Modul 3: Manajemen Inventori & Aturan FIFO (*Strict FIFO Stock*)
+## Module 3: Inventory Management & FIFO Rules (*Strict FIFO Stock*)
 
-- **FR-INV-01 (Pelacakan Batch Tertua - FIFO)**
-Saat terjadi penjualan (baik B2C maupun B2B), sistem **wajib memotong stok dari batch sangrai tertua** yang masih tersedia (*First-In, First-Out*).
-- **FR-INV-02 (Split Batch Otomatis)**
-Jika sisa kopi pada batch tertua tidak mencukupi satu pesanan, sistem secara otomatis menghabiskan batch tersebut dan mengambil sisanya dari batch tertua berikutnya.
-- **FR-INV-03 (Peringatan Stok Rendah)**
-Sistem menampilkan penanda status `OK/LOW/CRIT` pada perintah `1stcrack stock` jika stok biji kopi atau *green beans* berada di bawah batas minimum (*threshold*, default 500g, dapat diubah via `--threshold`).
+- **FR-INV-01 (Oldest Batch Tracking - FIFO)**
+On every sale (both B2C and B2B), the system **must deduct stock from the oldest available roast batch** (*First-In, First-Out*).
+- **FR-INV-02 (Automatic Batch Splitting)**
+When the oldest batch cannot cover one order, the system automatically empties that batch and takes the remainder from the next oldest batch.
+- **FR-INV-03 (Low Stock Warning)**
+The system shows an `OK/LOW/CRIT` status marker on the `1stcrack stock` command when coffee or *green bean* stock falls below the minimum (*threshold*, default 500g, adjustable via `--threshold`).
 
-## Modul 4: Laporan & Ringkasan Shift (*Reporting*)
+## Module 4: Shift Reports & Summaries (*Reporting*)
 
-- **FR-REP-01 (Rekap Penjualan Harian)**
-Menampilkan total pendapatan (Rupiah), jumlah transaksi, dan metode pembayaran (Tunai/QRIS/Transfer).
-- **FR-REP-02 (Audit Konsumsi Kopi)**
-Menampilkan total gramasi kopi yang terpakai hari ini beserta perincian batch mana saja yang terkonsumsi.
+- **FR-REP-01 (Daily Sales Recap)**
+Shows total revenue (Rupiah), transaction count, and payment methods (Cash/QRIS/Transfer).
+- **FR-REP-02 (Coffee Consumption Audit)**
+Shows total coffee grams consumed today with a breakdown of which batches were consumed.
 
----
+## Module 5: Guided Interactive Menu (*Guided Menu*)
 
-# 4. Kebutuhan Non-Fungsional (*Non-Functional Requirements*)
-
-- **NFR-PERF (Performa)**
-Eksekusi satu perintah < 30ms di luar I/O SQLite; aplikasi siap digunakan (*startup time*, open + migrasi DB) < 50ms.
-- **NFR-RELIAB (Keandalan & Anti-Crash)**
-Seluruh transaksi pemotongan stok bersifat atomik. Penghentian paksa proses atau *power loss* tidak boleh merusak file database (*zero corruption*, mode WAL).
-- **NFR-USAB (Kemudahan Penggunaan CLI)**
-Pola pemanggilan `1stcrack [--db PATH] <command> [flags]`, setiap perintah mendukung `--help`, input bobot memahami sufiks `mg/g/kg`, output tabel teks biasa yang terbaca di terminal selebar 80 karakter. Tanpa mouse, tanpa fokus, tanpa tombol fungsi.
-- **NFR-RES (Efisiensi Resource)**
-Konsumsi RAM tidak melebihi 25 MB dalam kondisi operasional penuh.
+- **FR-MENU-01 (Role Menu & Guided Flows)**
+Running `1stcrack` with no arguments (or `1stcrack menu`) opens an interactive menu: select a role (Cashier/Barista, Head Roaster, Owner/Manager — no password for MVP), then the role menu guides input step by step (sale, batch recording, stock, reports). Invalid input never stops the program; it reprompts with an error message. Choice `0` in any menu and end of input (Ctrl+D) close the program cleanly with exit code 0.
 
 ---
 
-# 5. Batasan Sistem (*Constraints*)
+# 4. Non-Functional Requirements (*Non-Functional Requirements*)
 
-- Aplikasi beroperasi secara lokal (*standalone offline-first*) tanpa ketergantungan koneksi internet.
-- Output berupa teks biasa (tabel sejajar) tanpa ketergantungan warna terminal atau tombol fungsi.
+- **NFR-PERF (Performance)**
+Single command execution < 30ms excluding SQLite I/O; application ready for use (*startup time*, DB open + migration) < 50ms.
+- **NFR-RELIAB (Reliability & Anti-Crash)**
+All stock deduction transactions are atomic. Forced process termination or *power loss* must not corrupt the database file (*zero corruption*, WAL mode).
+- **NFR-USAB (CLI Usability)**
+Invocation pattern `1stcrack [--db PATH] <command> [flags]`, every command supports `--help`, weight input understands `mg/g/kg` suffixes, plain-text table output readable in an 80-column terminal. Running with no arguments opens the role-based guided menu. No mouse, no focus, no function keys.
+- **NFR-RES (Resource Efficiency)**
+RAM consumption does not exceed 25 MB under full operation.
+
+---
+
+# 5. System Constraints (*Constraints*)
+
+- The application operates locally (*standalone offline-first*) with no internet dependency.
+- Output is plain text (aligned tables) with no dependency on terminal colours or function keys.

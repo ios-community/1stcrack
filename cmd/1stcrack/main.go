@@ -22,10 +22,12 @@ const Version = "1.0.0"
 const receiptsDir = "receipts"
 
 // main dispatches command-line arguments and exits with the command status.
+//
+// With no arguments it opens the guided menu reading from standard input.
 func main() {
 	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
 		fmt.Println("1stcrack", Version)
 		return
 	}
-	os.Exit(cli.Run(context.Background(), os.Args[1:], os.Stdout, os.Stderr, database.DefaultPath, receiptsDir))
+	os.Exit(cli.Run(context.Background(), os.Args[1:], os.Stdin, os.Stdout, os.Stderr, database.DefaultPath, receiptsDir))
 }
